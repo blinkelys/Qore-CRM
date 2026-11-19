@@ -6,6 +6,13 @@ import { loadConfig } from './config.ts';
 
 const logger = pino({ level: 'silent' });
 const app = createApp(logger, async () => {});
+const baseEnv = {
+  DATABASE_URL: 'postgres://localhost/qore',
+  APP_ORIGIN: 'http://localhost:8080',
+  SMTP_HOST: 'localhost',
+  SMTP_PORT: '1025',
+  MAIL_FROM: 'noreply@example.test',
+};
 
 describe('API foundation', () => {
   it('returns health status', async () => {
@@ -40,13 +47,13 @@ describe('API foundation', () => {
   });
 
   it('rejects invalid configuration without exposing values', () => {
-    expect(() =>
-      loadConfig({ PORT: 'secret', DATABASE_URL: 'postgres://localhost/qore' }),
-    ).toThrow('Invalid configuration: PORT');
-    expect(() => loadConfig({ DATABASE_URL: 'https://example.com' })).toThrow(
-      'Invalid configuration: DATABASE_URL',
+    expect(() => loadConfig({ ...baseEnv, PORT: 'secret' })).toThrow(
+      'Invalid configuration: PORT',
     );
-    expect(() => loadConfig({ DATABASE_URL: 'invalid' })).toThrow(
+    expect(() =>
+      loadConfig({ ...baseEnv, DATABASE_URL: 'https://example.com' }),
+    ).toThrow('Invalid configuration: DATABASE_URL');
+    expect(() => loadConfig({ ...baseEnv, DATABASE_URL: 'invalid' })).toThrow(
       'Invalid configuration: DATABASE_URL',
     );
   });

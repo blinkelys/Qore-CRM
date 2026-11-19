@@ -26,6 +26,8 @@ jobs:
         run: |
           curl --fail --silent --show-error http://127.0.0.1:8080/ | grep 'Qore CRM'
           curl --fail --silent --show-error http://127.0.0.1:8080/api/health | grep '"status":"ok"'
+      - name: Integration tests against PostgreSQL
+        run: TEST_DATABASE_URL=postgresql://qore:qore_local_only@localhost:55432/qore npm run test:integration -w @qore/api
       - name: Check database outage and recovery
         run: |
           docker compose stop db
