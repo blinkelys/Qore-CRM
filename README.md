@@ -106,6 +106,11 @@ restoring an entitlement restores access to the retained data.
 Select an organization in the workspace, then use its **Modules** section to
 enable the profile and edit its settings.
 
+The **Contacts** module lets organization members create, search, update,
+archive, and restore contacts. Email addresses are unique within an
+organization, including archived contacts. Module owners and admins control
+whether the module is enabled; all members can manage its contact records.
+
 The sample `.env.example` explicitly enables
 `SEED_DEVELOPMENT_ENTITLEMENTS=true` for local use. At API startup this grants
 the registered modules to existing organizations, and newly created
@@ -139,6 +144,15 @@ or `{ "enabled": false }`; and `GET`/`PUT` on
 `/api/organizations/:id/modules/:key/settings` read or replace settings.
 Settings endpoints reject disabled or unentitled modules. Module actions must
 use the shared `requireEnabled` check, including future AI actions.
+
+With the Contacts module enabled, `/api/organizations/:id/contacts` supports
+`GET` and `POST`; `GET` and `PUT` on `/:contactId` read or update a contact,
+and `PUT` on `/:contactId/archive` archives or restores it. List queries accept
+`q`, `status` (`active`, `archived`, or `all`), and a one-based `page`, with
+20 results per page. Writes use `name`, `email`, and `phone` strings; email and
+phone may be empty. Updates and archive changes require the last-read `version`
+and return `CONTACT_CONFLICT` when it is stale. Duplicate emails return
+`CONTACT_EMAIL_IN_USE`; archived contacts keep their email reservation.
 
 Each registered module declares its version, dependencies, permissions, route,
 navigation, default settings, and validation schema. Dependency cycles and

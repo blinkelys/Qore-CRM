@@ -122,6 +122,21 @@ export const moduleDefinitions: readonly ModuleDefinition[] = [
       .strict(),
     defaultSettings: { description: '', website: '' },
   },
+  {
+    key: 'contacts',
+    name: 'Contacts',
+    description: 'Manage and find contacts in your organization.',
+    version: 1,
+    dependencies: [],
+    permissions: {
+      read: ['owner', 'admin', 'member'],
+      manage: ['owner', 'admin'],
+    },
+    navigation: { label: 'Contacts', anchor: '#module-contacts' },
+    apiRoute: '/organizations/:organizationId/contacts',
+    settingsSchema: z.object({}).strict(),
+    defaultSettings: {},
+  },
 ];
 
 export const moduleRegistry = validateRegistry(moduleDefinitions);
