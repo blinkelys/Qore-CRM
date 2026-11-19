@@ -2,7 +2,7 @@
 
 Qore is in its foundation phase. The current application provides a Vue
 frontend, an Express API, PostgreSQL migrations, a containerized local stack,
-and authentication and organization APIs. CRM modules, AI, and billing are not
+and authentication and organization management. CRM modules, AI, and billing are not
 implemented yet; see [plan.md](./plan.md) for the roadmap.
 
 ## Requirements
@@ -23,8 +23,15 @@ implemented yet; see [plan.md](./plan.md) for the roadmap.
 Compose starts PostgreSQL, runs migrations, and only starts the API and Nginx
 after their dependencies are ready. The web and database ports bind to
 localhost. Change `WEB_PORT` or `POSTGRES_PORT` in `.env` if needed.
+If you change `WEB_PORT`, update `APP_ORIGIN` to match the browser URL.
 Changing PostgreSQL credentials in `.env` does not change credentials already
 stored in an existing database volume.
+
+Create an account from the home page, then create an organization in the
+workspace. Owners can invite people and manage roles there; invitees can
+open the emailed link, sign in or register with the invited address, and
+accept it. Use the organization selector to switch between organizations.
+Password recovery links are also delivered to Mailpit locally.
 
 ## Local frontend and API development
 
@@ -84,8 +91,9 @@ and list, change, or remove members via
 invite any role. Admins can invite or remove members but cannot manage owners
 or admins; members can leave an organization. The last owner cannot leave or
 be demoted. Invitations expire after seven days, are single-use, and can only
-be accepted by an account with the invited email address. Organization APIs
-check active membership for each request.
+be accepted by an account with the invited email address. An invitation also
+becomes invalid if its sender no longer has permission to issue it.
+Organization APIs check active membership for each request.
 
 To run database-backed integration tests, apply the migrations to a dedicated
 test database and set `TEST_DATABASE_URL` when running

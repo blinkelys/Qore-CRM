@@ -22,7 +22,12 @@ onMounted(async () => {
       <span class="text-xl font-bold tracking-tight"
         >Qore<span class="text-teal-400">.</span></span
       >
-      <span class="text-sm text-slate-400">CRM foundation</span>
+      <nav class="flex items-center gap-4 text-sm">
+        <RouterLink class="text-slate-300 hover:text-white" to="/login"
+          >Sign in</RouterLink
+        >
+        <RouterLink class="button" to="/register">Get started</RouterLink>
+      </nav>
     </header>
     <main class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
       <p
