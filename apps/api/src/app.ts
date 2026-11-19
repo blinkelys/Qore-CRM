@@ -1,7 +1,7 @@
 import express, { type ErrorRequestHandler } from 'express';
 import type { Logger } from 'pino';
 
-export function createApp(logger: Logger) {
+export function createApp(logger: Logger, checkDatabase: () => Promise<void>) {
   const app = express();
   app.disable('x-powered-by');
   app.use((req, res, next) => {
@@ -20,8 +20,19 @@ export function createApp(logger: Logger) {
   });
   app.use(express.json({ limit: '1mb' }));
 
-  app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok' });
+  app.get('/api/health', async (_req, res) => {
+    try {
+      await checkDatabase();
+      res.json({ status: 'ok' });
+    } catch {
+      logger.error('Database health check failed');
+      res.status(503).json({
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Database is unavailable.',
+        },
+      });
+    }
   });
 
   app.use((_req, res) => {
