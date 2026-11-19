@@ -4,12 +4,18 @@ import { loadConfig } from './config.ts';
 import { createDatabase } from './db/index.ts';
 import { createAuthRouter } from './auth/routes.ts';
 import { createMailer } from './mail.ts';
+import { createOrganizationRouter } from './organizations/routes.ts';
+import { Router } from 'express';
 
 const config = loadConfig(process.env);
 const logger = pino({ level: config.LOG_LEVEL });
 const database = createDatabase(config.DATABASE_URL, logger);
+const mailer = createMailer(config);
+const router = Router()
+  .use(createAuthRouter(database.db, config, mailer, logger))
+  .use(createOrganizationRouter(database.db, config, mailer, logger));
 const app = createApp(logger, database.checkHealth, {
-  router: createAuthRouter(database.db, config, createMailer(config), logger),
+  router,
   origin: config.APP_ORIGIN,
   trustProxy: config.TRUST_PROXY === '1',
 });

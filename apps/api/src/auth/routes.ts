@@ -16,9 +16,13 @@ const resetLifetime = 60 * 60 * 1000;
 const cookieName = 'qore_session';
 const dummyHash =
   '2f40757e475b3f66726fd537b71da08f:ff38ca85bbbf42d68bf6dfeca3c1fcd03153ef9bfcfe74d1807f3ff1ac3e86ede93c1f2cc9fb10db8c208548421456357d11e0db3b40b5a45e1232ef19c5615e';
-const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email().max(254));
 const passwordSchema = z.string().min(12).max(128);
-const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+export const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 const credentialsSchema = z.object({
   email: emailSchema,
   password: passwordSchema,

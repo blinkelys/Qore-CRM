@@ -2,8 +2,8 @@
 
 Qore is in its foundation phase. The current application provides a Vue
 frontend, an Express API, PostgreSQL migrations, a containerized local stack,
-and authentication APIs. Organization management, CRM modules, AI, and
-billing are not implemented yet; see [plan.md](./plan.md) for the roadmap.
+and authentication and organization APIs. CRM modules, AI, and billing are not
+implemented yet; see [plan.md](./plan.md) for the roadmap.
 
 ## Requirements
 
@@ -77,6 +77,20 @@ existing sessions. All API mutations require an `Origin` header matching
 are rate-limited per IP in memory, so a multi-instance deployment needs a
 shared rate-limit store. Account recovery and invitation links are sent by
 SMTP; the included Mailpit service is for local development only.
+
+Authenticated users can create and list organizations with `/api/organizations`,
+and list, change, or remove members via
+`/api/organizations/:organizationId/members`. Owners can assign roles and
+invite any role. Admins can invite or remove members but cannot manage owners
+or admins; members can leave an organization. The last owner cannot leave or
+be demoted. Invitations expire after seven days, are single-use, and can only
+be accepted by an account with the invited email address. Organization APIs
+check active membership for each request.
+
+To run database-backed integration tests, apply the migrations to a dedicated
+test database and set `TEST_DATABASE_URL` when running
+`npm run test:integration -w @qore/api`. Tests create and remove their own
+records; never point them at a production database.
 
 ## Deployment note
 
