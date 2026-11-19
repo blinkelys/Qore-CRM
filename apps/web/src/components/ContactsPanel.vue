@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { api, errorMessage } from '../api';
+import ContactCompanyLink from './ContactCompanyLink.vue';
+import { useRecordList } from './useRecordList';
 
 interface Contact {
   id: string;
@@ -17,48 +19,23 @@ interface ContactPage {
   pageSize: number;
 }
 
-const props = defineProps<{ organizationId: string }>();
+const props = defineProps<{
+  organizationId: string;
+  companiesEnabled?: boolean;
+}>();
 const base = `/organizations/${props.organizationId}/contacts`;
-const results = ref<ContactPage | null>(null);
-const search = ref('');
-const status = ref<'active' | 'archived' | 'all'>('active');
-const appliedSearch = ref('');
-const appliedStatus = ref<'active' | 'archived' | 'all'>('active');
+const { results, search, status, loading, error, load, refresh, applyFilters } =
+  useRecordList<ContactPage>(base);
 const selected = ref<Contact | null>(null);
 const form = reactive({ name: '', email: '', phone: '' });
 const editing = ref(false);
-const loading = ref(false);
 const busy = ref(false);
-const error = ref('');
 const notice = ref('');
-
-async function load(page = 1) {
-  loading.value = true;
-  try {
-    const response = await api.get<ContactPage>(base, {
-      params: { q: appliedSearch.value, status: appliedStatus.value, page },
-    });
-    results.value = response.data;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function refresh(page = 1) {
-  error.value = '';
-  try {
-    await load(page);
-  } catch (cause) {
-    results.value = null;
-    error.value = errorMessage(cause);
-  }
-}
 
 onMounted(() => refresh());
 
 function filter() {
-  appliedSearch.value = search.value;
-  appliedStatus.value = status.value;
+  applyFilters();
   selected.value = null;
   editing.value = false;
   notice.value = '';
@@ -343,6 +320,14 @@ async function toggleArchive() {
           Reload contact
         </button>
       </div>
+      <ContactCompanyLink
+        v-if="companiesEnabled"
+        :key="selected.id"
+        :organization-id="organizationId"
+        :contact-id="selected.id"
+        :version="selected.version"
+        @updated="selected.version = $event"
+      />
     </div>
   </section>
 </template>

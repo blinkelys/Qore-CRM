@@ -19,9 +19,12 @@ const page = (contacts = [contact], total = contacts.length) => ({
 });
 const base = '/organizations/org-id/contacts';
 
-function mountPanel() {
+function mountPanel(companiesEnabled = false) {
   const container = document.createElement('div');
-  const app = createApp(ContactsPanel, { organizationId: 'org-id' });
+  const app = createApp(ContactsPanel, {
+    organizationId: 'org-id',
+    companiesEnabled,
+  });
   app.mount(container);
   return { app, container };
 }
@@ -121,6 +124,63 @@ describe('contacts workspace', () => {
     button(container, 'Reload contact').click();
     await vi.waitFor(() =>
       expect(container.textContent).toContain('Ada updated'),
+    );
+    app.unmount();
+  });
+
+  it('updates the contact version after changing its company', async () => {
+    vi.spyOn(api, 'get')
+      .mockResolvedValueOnce({ data: page() })
+      .mockResolvedValueOnce({ data: { contact: { ...contact } } })
+      .mockResolvedValueOnce({ data: { company: null } })
+      .mockResolvedValueOnce({
+        data: {
+          companies: [{ id: 'company-id', name: 'Acme', archivedAt: null }],
+          page: 1,
+          total: 1,
+          pageSize: 20,
+        },
+      })
+      .mockResolvedValueOnce({ data: page() });
+    const put = vi
+      .spyOn(api, 'put')
+      .mockResolvedValueOnce({
+        data: {
+          company: { id: 'company-id', name: 'Acme', archivedAt: null },
+          contact: { version: 2 },
+        },
+      })
+      .mockResolvedValueOnce({ data: { contact: { ...contact, version: 3 } } });
+    const { app, container } = mountPanel(true);
+    await vi.waitFor(() => expect(container.textContent).toContain('View Ada'));
+    button(container, 'View Ada').click();
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('No company linked.'),
+    );
+    container
+      .querySelectorAll('form')[1]
+      ?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('Link Acme'),
+    );
+    button(container, 'Link Acme').click();
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('Company linked.'),
+    );
+    button(container, 'Edit contact').click();
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('Save contact'),
+    );
+    container
+      .querySelectorAll('form')[1]
+      ?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() =>
+      expect(put).toHaveBeenNthCalledWith(2, `${base}/contact-id`, {
+        name: 'Ada',
+        email: 'ada@example.test',
+        phone: '',
+        version: 2,
+      }),
     );
     app.unmount();
   });
