@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { api, errorMessage } from '../api';
 import type { Role } from '../auth';
+import ContactsPanel from './ContactsPanel.vue';
 
 interface ModuleSummary {
   key: string;
@@ -30,6 +31,9 @@ const error = ref('');
 const notice = ref('');
 const profileModule = computed(() =>
   modules.value.find((module) => module.key === 'organization-profile'),
+);
+const contactsModule = computed(() =>
+  modules.value.find((module) => module.key === 'contacts'),
 );
 const canManageProfile = computed(
   () => profileModule.value?.permissions.manage.includes(props.role) ?? false,
@@ -234,6 +238,10 @@ async function saveProfile() {
           </div>
         </dl>
       </section>
+      <ContactsPanel
+        v-if="contactsModule?.status === 'enabled'"
+        :organization-id="organizationId"
+      />
     </template>
   </section>
 </template>
