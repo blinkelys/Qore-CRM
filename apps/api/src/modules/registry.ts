@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { websiteSchema } from '../website.ts';
 
 export type ModuleRole = 'owner' | 'admin' | 'member';
 export interface ModuleDefinition {
@@ -85,20 +86,6 @@ export function enabledDependents(
   );
 }
 
-const websiteSchema = z
-  .string()
-  .max(2048)
-  .refine((value) => {
-    if (value === '') return true;
-    if (!URL.canParse(value)) return false;
-    const url = new URL(value);
-    return (
-      ['http:', 'https:'].includes(url.protocol) &&
-      !url.username &&
-      !url.password
-    );
-  });
-
 export const moduleDefinitions: readonly ModuleDefinition[] = [
   {
     key: 'organization-profile',
@@ -134,6 +121,21 @@ export const moduleDefinitions: readonly ModuleDefinition[] = [
     },
     navigation: { label: 'Contacts', anchor: '#module-contacts' },
     apiRoute: '/organizations/:organizationId/contacts',
+    settingsSchema: z.object({}).strict(),
+    defaultSettings: {},
+  },
+  {
+    key: 'companies',
+    name: 'Companies',
+    description: 'Manage companies and link them to contacts.',
+    version: 1,
+    dependencies: [],
+    permissions: {
+      read: ['owner', 'admin', 'member'],
+      manage: ['owner', 'admin'],
+    },
+    navigation: { label: 'Companies', anchor: '#module-companies' },
+    apiRoute: '/organizations/:organizationId/companies',
     settingsSchema: z.object({}).strict(),
     defaultSettings: {},
   },

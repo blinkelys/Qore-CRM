@@ -10,6 +10,7 @@ import {
   type Database,
   type Transaction,
 } from '../organizations/access.ts';
+import { checkRecordVersion, recordPageSize, recordQuery } from '../records.ts';
 
 const fields = z
   .object({
@@ -31,16 +32,8 @@ const editFields = fields.safeExtend({ version: z.number().int().positive() });
 const archiveFields = z
   .object({ version: z.number().int().positive(), archived: z.boolean() })
   .strict();
-const queryFields = z
-  .object({
-    q: z.string().trim().max(100).default(''),
-    status: z.enum(['active', 'archived', 'all']).default('active'),
-    page: z.coerce.number().int().min(1).max(10000).default(1),
-  })
-  .strict();
-const pageSize = 20;
 
-async function findContact(
+export async function findContact(
   tx: Transaction,
   organizationId: string,
   id: string,
@@ -81,15 +74,6 @@ async function ensureUniqueEmail(
     );
 }
 
-function checkVersion(current: number, version: number) {
-  if (current !== version)
-    throw new HttpError(
-      409,
-      'CONTACT_CONFLICT',
-      'This contact changed. Reload it before saving.',
-    );
-}
-
 export function createContactsRouter(db: Database) {
   const router = Router();
   const path = '/organizations/:organizationId/contacts';
@@ -98,7 +82,7 @@ export function createContactsRouter(db: Database) {
   router.get(path, async (req, res) => {
     const user = await requireUser(db, req);
     const organizationId = parseId(req.params.organizationId);
-    const query = parseBody(queryFields, req.query);
+    const query = parseBody(recordQuery, req.query);
     const result = await db.transaction(async (tx) => {
       await requireEnabled(tx, organizationId, user.id, 'contacts', 'read');
       const where = and(
@@ -125,13 +109,13 @@ export function createContactsRouter(db: Database) {
         .from(contacts)
         .where(where)
         .orderBy(asc(contacts.name), asc(contacts.id))
-        .limit(pageSize)
-        .offset((query.page - 1) * pageSize);
+        .limit(recordPageSize)
+        .offset((query.page - 1) * recordPageSize);
       return {
         contacts: items,
         total: count.total,
         page: query.page,
-        pageSize,
+        pageSize: recordPageSize,
       };
     });
     res.json(result);
@@ -172,7 +156,7 @@ export function createContactsRouter(db: Database) {
     const contact = await db.transaction(async (tx) => {
       await requireEnabled(tx, organizationId, user.id, 'contacts', 'read');
       const current = await findContact(tx, organizationId, id);
-      checkVersion(current.version, version);
+      checkRecordVersion(current.version, version, 'Contact');
       await ensureUniqueEmail(tx, organizationId, data.email, id);
       const [updated] = await tx
         .update(contacts)
@@ -194,7 +178,7 @@ export function createContactsRouter(db: Database) {
     const contact = await db.transaction(async (tx) => {
       await requireEnabled(tx, organizationId, user.id, 'contacts', 'read');
       const current = await findContact(tx, organizationId, id);
-      checkVersion(current.version, version);
+      checkRecordVersion(current.version, version, 'Contact');
       if (Boolean(current.archivedAt) === archived) return current;
       const [updated] = await tx
         .update(contacts)

@@ -1,11 +1,13 @@
 import {
   integer,
   boolean,
+  foreignKey,
   jsonb,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -105,20 +107,76 @@ export const organizationModules = pgTable(
   (table) => [primaryKey({ columns: [table.organizationId, table.moduleKey] })],
 );
 
-export const contacts = pgTable('contacts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  organizationId: uuid('organization_id')
-    .notNull()
-    .references(() => organizations.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  email: text('email'),
-  phone: text('phone'),
-  archivedAt: timestamp('archived_at', { withTimezone: true }),
-  version: integer('version').notNull().default(1),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const contacts = pgTable(
+  'contacts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    email: text('email'),
+    phone: text('phone'),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('contacts_organization_id_id_key').on(
+      table.organizationId,
+      table.id,
+    ),
+  ],
+);
+
+export const companies = pgTable(
+  'companies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    website: text('website'),
+    phone: text('phone'),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('companies_uniq_organization_id_id').on(
+      table.organizationId,
+      table.id,
+    ),
+  ],
+);
+
+export const contactCompanies = pgTable(
+  'contact_companies',
+  {
+    organizationId: uuid('organization_id').notNull(),
+    contactId: uuid('contact_id').notNull(),
+    companyId: uuid('company_id').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.organizationId, table.contactId] }),
+    foreignKey({
+      columns: [table.organizationId, table.contactId],
+      foreignColumns: [contacts.organizationId, contacts.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.organizationId, table.companyId],
+      foreignColumns: [companies.organizationId, companies.id],
+    }).onDelete('cascade'),
+  ],
+);

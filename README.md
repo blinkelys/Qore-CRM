@@ -110,6 +110,11 @@ The **Contacts** module lets organization members create, search, update,
 archive, and restore contacts. Email addresses are unique within an
 organization, including archived contacts. Module owners and admins control
 whether the module is enabled; all members can manage its contact records.
+The **Companies** module provides the same lifecycle for company records,
+with names unique per organization, including archived companies. When both
+modules are enabled, each contact may be linked to one company from the same
+organization. Archiving either record retains the link. An archived company
+must be restored before it can be newly linked.
 
 The sample `.env.example` explicitly enables
 `SEED_DEVELOPMENT_ENTITLEMENTS=true` for local use. At API startup this grants
@@ -153,6 +158,16 @@ and `PUT` on `/:contactId/archive` archives or restores it. List queries accept
 phone may be empty. Updates and archive changes require the last-read `version`
 and return `CONTACT_CONFLICT` when it is stale. Duplicate emails return
 `CONTACT_EMAIL_IN_USE`; archived contacts keep their email reservation.
+
+`/api/organizations/:id/companies` provides the same list, detail, update,
+and archive routes as contacts, with `name`, `website`, and `phone` fields.
+Duplicate names return `COMPANY_NAME_IN_USE`; stale updates return
+`COMPANY_CONFLICT`. `GET` and `PUT` on
+`/api/organizations/:id/contacts/:contactId/company` read or change a contact's
+company. The PUT body contains `companyId` (a UUID or `null` to unlink) and the
+contact's current `version`. Link changes increment the contact version.
+Both modules must be enabled and entitled to access the link; disabling either
+one preserves it. Database constraints also prevent cross-organization links.
 
 Each registered module declares its version, dependencies, permissions, route,
 navigation, default settings, and validation schema. Dependency cycles and
