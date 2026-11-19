@@ -56,5 +56,14 @@ describe('API foundation', () => {
     expect(() => loadConfig({ ...baseEnv, DATABASE_URL: 'invalid' })).toThrow(
       'Invalid configuration: DATABASE_URL',
     );
+    expect(() =>
+      loadConfig({
+        ...baseEnv,
+        NODE_ENV: 'production',
+        APP_ORIGIN: 'https://example.test',
+        SMTP_SECURE: 'true',
+        SEED_DEVELOPMENT_ENTITLEMENTS: 'true',
+      }),
+    ).toThrow('Invalid configuration: SEED_DEVELOPMENT_ENTITLEMENTS');
   });
 });

@@ -46,6 +46,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM in .env}
+      SEED_DEVELOPMENT_ENTITLEMENTS: ${SEED_DEVELOPMENT_ENTITLEMENTS:-false}
       TRUST_PROXY: '1'
     depends_on:
       migrate:

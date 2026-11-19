@@ -2,8 +2,9 @@
 
 Qore is in its foundation phase. The current application provides a Vue
 frontend, an Express API, PostgreSQL migrations, a containerized local stack,
-and authentication and organization management. CRM modules, AI, and billing are not
-implemented yet; see [plan.md](./plan.md) for the roadmap.
+authentication and organization management, and a module platform. Additional
+CRM modules, AI, and billing are not implemented yet; see [plan.md](./plan.md)
+for the roadmap.
 
 ## Requirements
 
@@ -94,6 +95,40 @@ be demoted. Invitations expire after seven days, are single-use, and can only
 be accepted by an account with the invited email address. An invitation also
 becomes invalid if its sender no longer has permission to issue it.
 Organization APIs check active membership for each request.
+
+## Modules
+
+The initial **Organization profile** module stores a description and website
+per organization. Owners and admins can enable, disable, and configure it;
+members can read its settings while it is enabled. Disabling a module or
+removing its entitlement blocks access but retains settings. Re-enabling or
+restoring an entitlement restores access to the retained data.
+
+The sample `.env.example` explicitly enables
+`SEED_DEVELOPMENT_ENTITLEMENTS=true` for local use. At API startup this grants
+the registered modules to existing organizations, and newly created
+organizations receive them too. Restart the API after changing this setting.
+Seeding is idempotent and re-grants removed development entitlements. It is
+for development only: production startup rejects the flag, and there is no
+public API for granting entitlements or payment flow. Without an entitlement,
+a module appears unavailable.
+
+`GET /api/organizations/:id/modules` lists module metadata and availability;
+`PUT /api/organizations/:id/modules/:key/enabled` accepts `{ "enabled": true }`
+or `{ "enabled": false }`; and `GET`/`PUT` on
+`/api/organizations/:id/modules/:key/settings` read or replace settings.
+Settings endpoints reject disabled or unentitled modules. Module actions must
+use the shared `requireEnabled` check, including future AI actions.
+
+Each registered module declares its version, dependencies, permissions, route,
+navigation, default settings, and validation schema. Dependency cycles and
+missing registry entries fail startup; enabled dependents block disabling a
+required module. When changing a settings schema, add a database migration for
+stored JSON and `settings_version` before deploying the new module version.
+Version mismatches return `MODULE_MIGRATION_REQUIRED` rather than resetting
+stored settings. Module-owned database tables should use normal ordered
+migrations and organization-scoped foreign keys; disabling a module must not
+delete its data.
 
 To run database-backed integration tests, apply the migrations to a dedicated
 test database and set `TEST_DATABASE_URL` when running

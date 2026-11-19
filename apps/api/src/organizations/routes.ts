@@ -11,55 +11,25 @@ import {
   tokenSchema,
 } from '../auth/routes.ts';
 import type { Config } from '../config.ts';
-import type { createDatabase } from '../db/index.ts';
 import {
   invitations,
   memberships,
+  moduleEntitlements,
   organizations,
   users,
 } from '../db/schema.ts';
 import { HttpError } from '../http.ts';
 import type { Mailer } from '../mail.ts';
+import { developmentEntitlements } from '../modules/development.ts';
+import {
+  lockOrganization,
+  membership,
+  parseId,
+  type Database,
+  type Transaction,
+} from './access.ts';
 
-type Database = ReturnType<typeof createDatabase>['db'];
-type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 const roleSchema = z.enum(['owner', 'admin', 'member']);
-const idSchema = z.uuid();
-
-function parseId(value: unknown) {
-  const parsed = idSchema.safeParse(value);
-  if (!parsed.success)
-    throw new HttpError(400, 'INVALID_INPUT', 'Invalid identifier.');
-  return parsed.data;
-}
-
-async function lockOrganization(tx: Transaction, organizationId: string) {
-  const [organization] = await tx
-    .select()
-    .from(organizations)
-    .where(eq(organizations.id, organizationId))
-    .for('update');
-  if (!organization)
-    throw new HttpError(404, 'NOT_FOUND', 'Organization not found.');
-  return organization;
-}
-
-async function membership(
-  tx: Transaction,
-  organizationId: string,
-  userId: string,
-) {
-  const [member] = await tx
-    .select()
-    .from(memberships)
-    .where(
-      and(
-        eq(memberships.organizationId, organizationId),
-        eq(memberships.userId, userId),
-      ),
-    );
-  return member;
-}
 
 function requireManager(role: string) {
   if (role !== 'owner' && role !== 'admin') {
@@ -149,6 +119,10 @@ export function createOrganizationRouter(
       await tx
         .insert(memberships)
         .values({ organizationId: created.id, userId: user.id, role: 'owner' });
+      if (config.SEED_DEVELOPMENT_ENTITLEMENTS === 'true') {
+        const values = developmentEntitlements([created.id]);
+        if (values.length) await tx.insert(moduleEntitlements).values(values);
+      }
       return created;
     });
     res.status(201).json({ organization: { ...organization, role: 'owner' } });

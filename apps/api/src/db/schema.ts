@@ -1,5 +1,7 @@
 import {
   integer,
+  boolean,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -74,3 +76,31 @@ export const invitations = pgTable('invitations', {
     .references(() => users.id),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
+
+export const moduleEntitlements = pgTable(
+  'module_entitlements',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    moduleKey: text('module_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.organizationId, table.moduleKey] })],
+);
+
+export const organizationModules = pgTable(
+  'organization_modules',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    moduleKey: text('module_key').notNull(),
+    enabled: boolean('enabled').notNull().default(false),
+    settings: jsonb('settings').notNull(),
+    settingsVersion: integer('settings_version').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.organizationId, table.moduleKey] })],
+);

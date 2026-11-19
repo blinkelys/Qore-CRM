@@ -30,11 +30,22 @@ const configSchema = z
     ),
     MAIL_FROM: z.email(),
     TRUST_PROXY: z.enum(['0', '1']).default('0'),
+    SEED_DEVELOPMENT_ENTITLEMENTS: z.enum(['true', 'false']).default('false'),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
   })
   .superRefine((config, context) => {
+    if (
+      config.NODE_ENV === 'production' &&
+      config.SEED_DEVELOPMENT_ENTITLEMENTS === 'true'
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['SEED_DEVELOPMENT_ENTITLEMENTS'],
+        message: 'Development entitlements are not allowed in production',
+      });
+    }
     if (Boolean(config.SMTP_USER) !== Boolean(config.SMTP_PASSWORD)) {
       context.addIssue({
         code: 'custom',
