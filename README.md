@@ -115,6 +115,24 @@ for development only: production startup rejects the flag, and there is no
 public API for granting entitlements or payment flow. Without an entitlement,
 a module appears unavailable.
 
+An operator with database access can grant or revoke an entitlement without
+payments. Use the organization's UUID and a registered module key:
+
+```sh
+npm run modules:entitlement -w @qore/api -- grant <organization-id> organization-profile
+npm run modules:entitlement -w @qore/api -- revoke <organization-id> organization-profile
+```
+
+For the Docker stack, run the command in the migration image:
+
+```sh
+docker compose run --build --rm migrate npm run modules:entitlement -w @qore/api -- grant <organization-id> organization-profile
+```
+
+The command uses `DATABASE_URL`, is idempotent, and preserves module data when
+revoking access.
+Development seeding will re-grant revoked entitlements at the next API start.
+
 `GET /api/organizations/:id/modules` lists module metadata and availability;
 `PUT /api/organizations/:id/modules/:key/enabled` accepts `{ "enabled": true }`
 or `{ "enabled": false }`; and `GET`/`PUT` on

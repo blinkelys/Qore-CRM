@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { and, eq, inArray } from 'drizzle-orm';
 import { Router } from 'express';
 import pino from 'pino';
@@ -17,6 +19,7 @@ import {
 } from '../db/schema.ts';
 import { createOrganizationRouter } from '../organizations/routes.ts';
 import { seedDevelopmentEntitlements } from './development.ts';
+import { setEntitlement } from './entitlements.ts';
 import { createModuleRouter } from './routes.ts';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -111,19 +114,53 @@ describe.skipIf(!databaseUrl)('module lifecycle with PostgreSQL', () => {
       ).status,
     ).toBe(404);
 
-    await database.db
-      .delete(moduleEntitlements)
-      .where(
-        and(
-          eq(moduleEntitlements.organizationId, second),
-          eq(moduleEntitlements.moduleKey, key),
-        ),
-      );
+    await setEntitlement(database.db, second, key, 'revoke');
     const secondRoute = `/api/organizations/${second}/modules/${key}`;
     expect(
       (await owner.get(`/api/organizations/${second}/modules`)).body.modules[0]
         .status,
     ).toBe('unavailable');
+    const runCli = promisify(execFile);
+    const cliOptions = {
+      cwd: process.cwd(),
+      env: { ...process.env, DATABASE_URL: config.DATABASE_URL },
+    };
+    await expect(
+      runCli(
+        process.execPath,
+        ['src/modules/entitlement-cli.ts', 'grant', second, 'unknown'],
+        cliOptions,
+      ),
+    ).rejects.toMatchObject({
+      code: 1,
+      stderr: expect.stringContaining('Unknown module.'),
+    });
+    await expect(
+      runCli(
+        process.execPath,
+        ['src/modules/entitlement-cli.ts', 'grant', randomUUID(), key],
+        cliOptions,
+      ),
+    ).rejects.toMatchObject({
+      code: 1,
+      stderr: expect.stringContaining('Organization not found.'),
+    });
+    const grant = await runCli(
+      'npm',
+      ['run', 'modules:entitlement', '--', 'grant', second, key],
+      cliOptions,
+    );
+    expect(grant.stdout).toContain('Entitlement granted.');
+    expect(
+      (await owner.get(`/api/organizations/${second}/modules`)).body.modules[0]
+        .status,
+    ).toBe('available');
+    const revoke = await runCli(
+      process.execPath,
+      ['src/modules/entitlement-cli.ts', 'revoke', second, key],
+      cliOptions,
+    );
+    expect(revoke.stdout).toContain('Entitlement revoked.');
     expect(
       (
         await owner
@@ -227,14 +264,7 @@ describe.skipIf(!databaseUrl)('module lifecycle with PostgreSQL', () => {
           eq(organizationModules.moduleKey, key),
         ),
       );
-    await database.db
-      .delete(moduleEntitlements)
-      .where(
-        and(
-          eq(moduleEntitlements.organizationId, first),
-          eq(moduleEntitlements.moduleKey, key),
-        ),
-      );
+    await setEntitlement(database.db, first, key, 'revoke');
     expect((await member.get(`${route}/settings`)).status).toBe(404);
     expect(
       (await owner.get(`/api/organizations/${first}/modules`)).body.modules[0]
@@ -258,9 +288,8 @@ describe.skipIf(!databaseUrl)('module lifecycle with PostgreSQL', () => {
         throw rollback;
       }),
     ).rejects.toBe(rollback);
-    await database.db
-      .insert(moduleEntitlements)
-      .values({ organizationId: first, moduleKey: key });
+    await setEntitlement(database.db, first, key, 'grant');
+    await setEntitlement(database.db, first, key, 'grant');
     expect((await owner.get(`${route}/settings`)).body.settings).toEqual(
       settings,
     );
