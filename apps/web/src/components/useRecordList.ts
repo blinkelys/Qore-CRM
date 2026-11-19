@@ -1,7 +1,10 @@
 import { ref, shallowRef } from 'vue';
 import { api, errorMessage } from '../api';
 
-export function useRecordList<Page>(base: string) {
+export function useRecordList<Page>(
+  base: string,
+  additionalParams: () => Record<string, string> = () => ({}),
+) {
   const results = shallowRef<Page | null>(null);
   const search = ref('');
   const status = ref<'active' | 'archived' | 'all'>('active');
@@ -14,7 +17,12 @@ export function useRecordList<Page>(base: string) {
     loading.value = true;
     try {
       const response = await api.get<Page>(base, {
-        params: { q: appliedSearch.value, status: appliedStatus.value, page },
+        params: {
+          q: appliedSearch.value,
+          status: appliedStatus.value,
+          page,
+          ...additionalParams(),
+        },
       });
       results.value = response.data;
     } finally {

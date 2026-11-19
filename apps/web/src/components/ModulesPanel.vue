@@ -4,6 +4,7 @@ import { api, errorMessage } from '../api';
 import type { Role } from '../auth';
 import ContactsPanel from './ContactsPanel.vue';
 import CompaniesPanel from './CompaniesPanel.vue';
+import OpportunitiesPanel from './OpportunitiesPanel.vue';
 
 interface ModuleSummary {
   key: string;
@@ -41,6 +42,9 @@ const companiesModule = computed(() =>
 );
 const timelineModule = computed(() =>
   modules.value.find((module) => module.key === 'timeline'),
+);
+const opportunitiesModule = computed(() =>
+  modules.value.find((module) => module.key === 'opportunities'),
 );
 const canManageProfile = computed(
   () => profileModule.value?.permissions.manage.includes(props.role) ?? false,
@@ -255,6 +259,13 @@ async function saveProfile() {
         v-if="companiesModule?.status === 'enabled'"
         :organization-id="organizationId"
         :timeline-enabled="timelineModule?.status === 'enabled'"
+      />
+      <OpportunitiesPanel
+        v-if="opportunitiesModule?.status === 'enabled'"
+        :organization-id="organizationId"
+        :can-manage-stages="
+          opportunitiesModule.permissions.manage.includes(role)
+        "
       />
       <section
         v-if="timelineModule?.status === 'enabled'"

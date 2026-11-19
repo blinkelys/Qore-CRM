@@ -125,4 +125,47 @@ describe('module management', () => {
     expect(container.querySelector('form')).toBeNull();
     app.unmount();
   });
+
+  it('mounts the opportunity workspace only when enabled', async () => {
+    const opportunityModule = {
+      ...module,
+      key: 'opportunities',
+      name: 'Opportunities',
+      navigation: { label: 'Opportunities', anchor: '#module-opportunities' },
+    };
+    vi.spyOn(api, 'get').mockImplementation(async (url) => {
+      if (url.endsWith('/modules'))
+        return {
+          data: {
+            modules: [
+              { ...opportunityModule, enabled: true, status: 'enabled' },
+            ],
+          },
+        };
+      if (url.endsWith('/stages')) return { data: { stages: [] } };
+      return { data: { opportunities: [], total: 0, page: 1, pageSize: 20 } };
+    });
+    const { app, container } = mountPanel('member');
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('No stages yet.'),
+    );
+    expect(container.querySelector('#module-opportunities')).not.toBeNull();
+    expect(container.textContent).not.toContain('Add stage');
+    app.unmount();
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        modules: [
+          { ...opportunityModule, enabled: false, status: 'available' },
+        ],
+      },
+    });
+    const disabled = mountPanel('owner');
+    await vi.waitFor(() =>
+      expect(disabled.container.textContent).toContain('Enable Opportunities'),
+    );
+    expect(
+      disabled.container.querySelector('#module-opportunities'),
+    ).toBeNull();
+    disabled.app.unmount();
+  });
 });
