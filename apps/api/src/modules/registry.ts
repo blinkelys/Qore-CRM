@@ -154,6 +154,21 @@ export const moduleDefinitions: readonly ModuleDefinition[] = [
     settingsSchema: z.object({}).strict(),
     defaultSettings: {},
   },
+  {
+    key: 'opportunities',
+    name: 'Opportunities',
+    description: 'Track opportunities through a configurable pipeline.',
+    version: 1,
+    dependencies: [],
+    permissions: {
+      read: ['owner', 'admin', 'member'],
+      manage: ['owner', 'admin'],
+    },
+    navigation: { label: 'Opportunities', anchor: '#module-opportunities' },
+    apiRoute: '/organizations/:organizationId/opportunities',
+    settingsSchema: z.object({}).strict(),
+    defaultSettings: {},
+  },
 ];
 
 export const moduleRegistry = validateRegistry(moduleDefinitions);

@@ -4,6 +4,7 @@ import {
   check,
   foreignKey,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -223,6 +224,58 @@ export const timelineEntries = pgTable(
     check(
       'timeline_entries_body_check',
       sql`length(trim(${table.body})) BETWEEN 1 AND 4000`,
+    ),
+  ],
+);
+
+export const pipelineStages = pgTable(
+  'pipeline_stages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    position: integer('position').notNull(),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    version: integer('version').notNull().default(1),
+  },
+  (table) => [
+    unique('pipeline_stages_org_id_key').on(table.organizationId, table.id),
+    check('pipeline_stages_position_check', sql`${table.position} >= 0`),
+    check('pipeline_stages_version_check', sql`${table.version} > 0`),
+  ],
+);
+
+export const opportunities = pgTable(
+  'opportunities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    stageId: uuid('stage_id').notNull(),
+    name: text('name').notNull(),
+    amount: numeric('amount', { precision: 14, scale: 2 }),
+    currency: text('currency'),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.stageId],
+      foreignColumns: [pipelineStages.organizationId, pipelineStages.id],
+    }),
+    check('opportunities_version_check', sql`${table.version} > 0`),
+    check(
+      'opportunities_amount_check',
+      sql`(${table.amount} IS NULL AND ${table.currency} IS NULL) OR (${table.amount} IS NOT NULL AND ${table.amount} >= 0 AND ${table.currency} IS NOT NULL AND ${table.currency} ~ '^[A-Z]{3}$')`,
     ),
   ],
 );

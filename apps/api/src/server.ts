@@ -11,6 +11,7 @@ import { createModuleRouter } from './modules/routes.ts';
 import { createContactsRouter } from './contacts/routes.ts';
 import { createCompaniesRouter } from './companies/routes.ts';
 import { createTimelineRouter } from './timeline/routes.ts';
+import { createOpportunitiesRouter } from './opportunities/routes.ts';
 
 const config = loadConfig(process.env);
 const logger = pino({ level: config.LOG_LEVEL });
@@ -32,7 +33,8 @@ const router = Router()
   .use(createModuleRouter(database.db))
   .use(createContactsRouter(database.db))
   .use(createCompaniesRouter(database.db))
-  .use(createTimelineRouter(database.db));
+  .use(createTimelineRouter(database.db))
+  .use(createOpportunitiesRouter(database.db));
 const app = createApp(logger, database.checkHealth, {
   router,
   origin: config.APP_ORIGIN,

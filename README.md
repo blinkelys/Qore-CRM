@@ -123,6 +123,16 @@ are append-only: there is no edit or delete action. Each entry retains its
 author and creation timestamp even if the author leaves the organization.
 Disabling a module or archiving a record retains its history.
 
+The **Opportunities** module tracks deals in an organization-specific pipeline.
+Owners and admins first add stages, then can rename, reorder, deactivate, or
+delete unused stages. A stage with active opportunities cannot be deactivated,
+and a stage with any opportunity history cannot be deleted. All members can
+create, update, archive, and restore opportunities. Amounts are optional;
+when provided, enter a non-negative decimal with up to two fractional digits and
+a three-letter currency code. Codes are not validated against a currency list.
+Opportunities are currently standalone and are not linked to contacts or
+companies.
+
 The sample `.env.example` explicitly enables
 `SEED_DEVELOPMENT_ENTITLEMENTS=true` for local use. At API startup this grants
 the registered modules to existing organizations, and newly created
@@ -184,6 +194,16 @@ nonempty `body` of up to 4,000 characters. GET accepts a one-based `page`
 and returns 20 entries per page, newest first. Entries include author ID,
 email, and creation time. Both the timeline and relevant record module must
 be enabled and entitled. Task entries are history, not scheduled reminders.
+
+`/api/organizations/:id/opportunities` provides list (`q`, `status`, `page`,
+and optional `stageId`), detail, create, update, and archive endpoints. Write
+fields are `name`, `stageId`, `amount`, and `currency`; use empty strings for
+both amount and currency when no value is set. Updates and archive changes
+require the last-read `version`. The `/stages` endpoints list and add stages;
+owners and admins can rename, move (`up` or `down`), deactivate, reactivate,
+or delete a stage using its last-read version. A pipeline may contain up to
+50 stages, including inactive stages. Archived opportunities retain their
+stage; restore its stage or move the opportunity before restoring the record.
 
 Each registered module declares its version, dependencies, permissions, route,
 navigation, default settings, and validation schema. Dependency cycles and

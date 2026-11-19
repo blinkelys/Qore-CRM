@@ -14,7 +14,7 @@ export const recordPageSize = 20;
 export function checkRecordVersion(
   current: number,
   version: number,
-  kind: 'Contact' | 'Company',
+  kind: 'Contact' | 'Company' | 'Opportunity' | 'Stage',
 ) {
   if (current !== version)
     throw new HttpError(
