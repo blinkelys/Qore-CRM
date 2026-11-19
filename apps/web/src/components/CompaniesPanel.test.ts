@@ -18,9 +18,12 @@ const page = (companies = [company]) => ({
   pageSize: 20,
 });
 const base = '/organizations/org-id/companies';
-function mountPanel() {
+function mountPanel(timelineEnabled = false) {
   const container = document.createElement('div');
-  const app = createApp(CompaniesPanel, { organizationId: 'org-id' });
+  const app = createApp(CompaniesPanel, {
+    organizationId: 'org-id',
+    timelineEnabled,
+  });
   app.mount(container);
   return { app, container };
 }
@@ -106,6 +109,28 @@ describe('companies workspace', () => {
     await vi.waitFor(() =>
       expect(container.textContent).toContain('Acme updated'),
     );
+    app.unmount();
+  });
+
+  it('shows history for a selected company when the timeline module is enabled', async () => {
+    const get = vi
+      .spyOn(api, 'get')
+      .mockResolvedValueOnce({ data: page() })
+      .mockResolvedValueOnce({ data: { company } })
+      .mockResolvedValueOnce({
+        data: { entries: [], total: 0, page: 1, pageSize: 20 },
+      });
+    const { app, container } = mountPanel(true);
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('View Acme'),
+    );
+    button(container, 'View Acme').click();
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('No entries yet.'),
+    );
+    expect(get).toHaveBeenCalledWith(`${base}/company-id/timeline`, {
+      params: { page: 1 },
+    });
     app.unmount();
   });
 });

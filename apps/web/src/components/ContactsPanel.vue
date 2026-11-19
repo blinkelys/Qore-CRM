@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { api, errorMessage } from '../api';
 import ContactCompanyLink from './ContactCompanyLink.vue';
+import TimelinePanel from './TimelinePanel.vue';
 import { useRecordList } from './useRecordList';
 
 interface Contact {
@@ -22,6 +23,7 @@ interface ContactPage {
 const props = defineProps<{
   organizationId: string;
   companiesEnabled?: boolean;
+  timelineEnabled?: boolean;
 }>();
 const base = `/organizations/${props.organizationId}/contacts`;
 const { results, search, status, loading, error, load, refresh, applyFilters } =
@@ -327,6 +329,13 @@ async function toggleArchive() {
         :contact-id="selected.id"
         :version="selected.version"
         @updated="selected.version = $event"
+      />
+      <TimelinePanel
+        v-if="timelineEnabled"
+        :key="selected.id"
+        :organization-id="organizationId"
+        record-type="contacts"
+        :record-id="selected.id"
       />
     </div>
   </section>

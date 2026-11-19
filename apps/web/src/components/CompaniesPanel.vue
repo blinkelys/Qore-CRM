@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { api, errorMessage } from '../api';
+import TimelinePanel from './TimelinePanel.vue';
 import { useRecordList } from './useRecordList';
 
 interface Company {
@@ -18,7 +19,10 @@ interface CompanyPage {
   pageSize: number;
 }
 
-const props = defineProps<{ organizationId: string }>();
+const props = defineProps<{
+  organizationId: string;
+  timelineEnabled?: boolean;
+}>();
 const base = `/organizations/${props.organizationId}/companies`;
 const { results, search, status, loading, error, load, refresh, applyFilters } =
   useRecordList<CompanyPage>(base);
@@ -319,6 +323,13 @@ async function toggleArchive() {
           Reload company
         </button>
       </div>
+      <TimelinePanel
+        v-if="timelineEnabled"
+        :key="selected.id"
+        :organization-id="organizationId"
+        record-type="companies"
+        :record-id="selected.id"
+      />
     </div>
   </section>
 </template>

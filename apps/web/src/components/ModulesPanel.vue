@@ -39,6 +39,9 @@ const contactsModule = computed(() =>
 const companiesModule = computed(() =>
   modules.value.find((module) => module.key === 'companies'),
 );
+const timelineModule = computed(() =>
+  modules.value.find((module) => module.key === 'timeline'),
+);
 const canManageProfile = computed(
   () => profileModule.value?.permissions.manage.includes(props.role) ?? false,
 );
@@ -246,11 +249,23 @@ async function saveProfile() {
         v-if="contactsModule?.status === 'enabled'"
         :organization-id="organizationId"
         :companies-enabled="companiesModule?.status === 'enabled'"
+        :timeline-enabled="timelineModule?.status === 'enabled'"
       />
       <CompaniesPanel
         v-if="companiesModule?.status === 'enabled'"
         :organization-id="organizationId"
+        :timeline-enabled="timelineModule?.status === 'enabled'"
       />
+      <section
+        v-if="timelineModule?.status === 'enabled'"
+        id="module-timeline"
+        class="mt-6 border-t border-slate-800 pt-6"
+      >
+        <h3 class="text-lg font-semibold">Notes and activities</h3>
+        <p class="mt-1 text-sm text-slate-400">
+          Open a contact or company to view and add entries.
+        </p>
+      </section>
     </template>
   </section>
 </template>

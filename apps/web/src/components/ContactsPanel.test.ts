@@ -19,11 +19,12 @@ const page = (contacts = [contact], total = contacts.length) => ({
 });
 const base = '/organizations/org-id/contacts';
 
-function mountPanel(companiesEnabled = false) {
+function mountPanel(companiesEnabled = false, timelineEnabled = false) {
   const container = document.createElement('div');
   const app = createApp(ContactsPanel, {
     organizationId: 'org-id',
     companiesEnabled,
+    timelineEnabled,
   });
   app.mount(container);
   return { app, container };
@@ -182,6 +183,26 @@ describe('contacts workspace', () => {
         version: 2,
       }),
     );
+    app.unmount();
+  });
+
+  it('shows history for a selected contact when the timeline module is enabled', async () => {
+    const get = vi
+      .spyOn(api, 'get')
+      .mockResolvedValueOnce({ data: page() })
+      .mockResolvedValueOnce({ data: { contact } })
+      .mockResolvedValueOnce({
+        data: { entries: [], total: 0, page: 1, pageSize: 20 },
+      });
+    const { app, container } = mountPanel(false, true);
+    await vi.waitFor(() => expect(container.textContent).toContain('View Ada'));
+    button(container, 'View Ada').click();
+    await vi.waitFor(() =>
+      expect(container.textContent).toContain('No entries yet.'),
+    );
+    expect(get).toHaveBeenCalledWith(`${base}/contact-id/timeline`, {
+      params: { page: 1 },
+    });
     app.unmount();
   });
 });
