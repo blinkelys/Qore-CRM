@@ -47,7 +47,7 @@ function requirePermission(
     throw new HttpError(
       403,
       'FORBIDDEN',
-      'You do not have permission to manage this module.',
+      'You do not have permission to access this module.',
     );
   }
 }
@@ -167,6 +167,7 @@ export function createModuleRouter(db: Database) {
         permissions: definition.permissions,
         navigation: definition.navigation,
         apiRoute: definition.apiRoute,
+        entitled: entitled.has(definition.key),
         enabled: enabled.has(definition.key),
         status:
           !entitled.has(definition.key) ||

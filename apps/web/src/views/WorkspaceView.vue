@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api, errorMessage } from '../api';
+import ModulesPanel from '../components/ModulesPanel.vue';
 import {
   auth,
   refreshSession,
@@ -356,6 +357,12 @@ async function logout() {
         <p v-else class="text-slate-400">
           Create your first organization to get started.
         </p>
+        <ModulesPanel
+          v-if="selected"
+          :key="selected.id"
+          :organization-id="selected.id"
+          :role="selected.role"
+        />
       </template>
     </main>
   </div>

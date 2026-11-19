@@ -103,6 +103,8 @@ per organization. Owners and admins can enable, disable, and configure it;
 members can read its settings while it is enabled. Disabling a module or
 removing its entitlement blocks access but retains settings. Re-enabling or
 restoring an entitlement restores access to the retained data.
+Select an organization in the workspace, then use its **Modules** section to
+enable the profile and edit its settings.
 
 The sample `.env.example` explicitly enables
 `SEED_DEVELOPMENT_ENTITLEMENTS=true` for local use. At API startup this grants
