@@ -5,7 +5,7 @@ import { createDatabase } from './db/index.ts';
 
 const config = loadConfig(process.env);
 const logger = pino({ level: config.LOG_LEVEL });
-const database = createDatabase(config.DATABASE_URL);
+const database = createDatabase(config.DATABASE_URL, logger);
 const app = createApp(logger, database.checkHealth);
 
 const server = app.listen(config.PORT, '0.0.0.0', () => {
