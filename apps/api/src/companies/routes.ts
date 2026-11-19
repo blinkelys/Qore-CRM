@@ -40,7 +40,7 @@ const linkFields = z
   })
   .strict();
 
-async function findCompany(
+export async function findCompany(
   tx: Transaction,
   organizationId: string,
   id: string,

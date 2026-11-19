@@ -1,6 +1,7 @@
 import {
   integer,
   boolean,
+  check,
   foreignKey,
   jsonb,
   pgTable,
@@ -10,6 +11,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const appMetadata = pgTable('app_metadata', {
   id: integer('id').primaryKey(),
@@ -178,5 +180,49 @@ export const contactCompanies = pgTable(
       columns: [table.organizationId, table.companyId],
       foreignColumns: [companies.organizationId, companies.id],
     }).onDelete('cascade'),
+  ],
+);
+
+export const timelineEntries = pgTable(
+  'timeline_entries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    contactId: uuid('contact_id'),
+    companyId: uuid('company_id'),
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id),
+    kind: text('kind', {
+      enum: ['note', 'call', 'meeting', 'email', 'task'],
+    }).notNull(),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.contactId],
+      foreignColumns: [contacts.organizationId, contacts.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.organizationId, table.companyId],
+      foreignColumns: [companies.organizationId, companies.id],
+    }).onDelete('cascade'),
+    check(
+      'timeline_entries_target_check',
+      sql`(${table.contactId} IS NOT NULL) <> (${table.companyId} IS NOT NULL)`,
+    ),
+    check(
+      'timeline_entries_kind_check',
+      sql`${table.kind} IN ('note', 'call', 'meeting', 'email', 'task')`,
+    ),
+    check(
+      'timeline_entries_body_check',
+      sql`length(trim(${table.body})) BETWEEN 1 AND 4000`,
+    ),
   ],
 );

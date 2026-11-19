@@ -116,6 +116,13 @@ modules are enabled, each contact may be linked to one company from the same
 organization. Archiving either record retains the link. An archived company
 must be restored before it can be newly linked.
 
+The **Notes and activities** module records notes, calls, meetings, emails, and
+tasks on contacts or companies. Enable it alongside the relevant record module.
+All members can add and read entries, including on archived records. Entries
+are append-only: there is no edit or delete action. Each entry retains its
+author and creation timestamp even if the author leaves the organization.
+Disabling a module or archiving a record retains its history.
+
 The sample `.env.example` explicitly enables
 `SEED_DEVELOPMENT_ENTITLEMENTS=true` for local use. At API startup this grants
 the registered modules to existing organizations, and newly created
@@ -168,6 +175,15 @@ company. The PUT body contains `companyId` (a UUID or `null` to unlink) and the
 contact's current `version`. Link changes increment the contact version.
 Both modules must be enabled and entitled to access the link; disabling either
 one preserves it. Database constraints also prevent cross-organization links.
+
+`GET` and `POST` on
+`/api/organizations/:id/contacts/:contactId/timeline` or
+`/api/organizations/:id/companies/:companyId/timeline` list and add history.
+POST accepts `kind` (`note`, `call`, `meeting`, `email`, or `task`) and a
+nonempty `body` of up to 4,000 characters. GET accepts a one-based `page`
+and returns 20 entries per page, newest first. Entries include author ID,
+email, and creation time. Both the timeline and relevant record module must
+be enabled and entitled. Task entries are history, not scheduled reminders.
 
 Each registered module declares its version, dependencies, permissions, route,
 navigation, default settings, and validation schema. Dependency cycles and

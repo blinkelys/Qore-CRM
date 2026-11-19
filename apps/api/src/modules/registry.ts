@@ -139,6 +139,21 @@ export const moduleDefinitions: readonly ModuleDefinition[] = [
     settingsSchema: z.object({}).strict(),
     defaultSettings: {},
   },
+  {
+    key: 'timeline',
+    name: 'Notes and activities',
+    description: 'Record notes and activities on contacts and companies.',
+    version: 1,
+    dependencies: [],
+    permissions: {
+      read: ['owner', 'admin', 'member'],
+      manage: ['owner', 'admin'],
+    },
+    navigation: { label: 'Notes and activities', anchor: '#module-timeline' },
+    apiRoute: '/organizations/:organizationId/:recordType/:recordId/timeline',
+    settingsSchema: z.object({}).strict(),
+    defaultSettings: {},
+  },
 ];
 
 export const moduleRegistry = validateRegistry(moduleDefinitions);
